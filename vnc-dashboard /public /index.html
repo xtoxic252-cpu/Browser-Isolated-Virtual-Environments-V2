@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNC OS Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar styling */
+        #sidebar { width: 260px; background: #161b22; border-right: 1px solid #30363d; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        h2 { font-size: 18px; color: #58a6ff; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 12px; text-align: left; border-radius: 6px; cursor: pointer; font-weight: 6px; transition: 0.2s; }
+        .btn:hover { background: #30363d; border-color: #8b949e; }
+        .btn.active { background: #1f6feb; border-color: #58a6ff; color: white; }
+
+        /* Viewer screen styling */
+        #viewer-container { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; background: #000; }
+        #status-bar { background: #161b22; padding: 10px 20px; font-size: 14px; border-bottom: 1px solid #30363d; color: #8b949e; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h2>Workspaces</h2>
+        <div id="server-list" style="display: flex; flex-direction: column; gap: 10px;">
+            </div>
+    </div>
+
+    <div id="viewer-container">
+        <div id="status-bar">System Status: <span id="current-os" style="color: #58a6ff;">Select an Environment</span></div>
+        <iframe id="vnc-frame" src="about:blank"></iframe>
+    </div>
+
+    <script>
+        const frame = document.getElementById('vnc-frame');
+        const statusText = document.getElementById('current-os');
+        const listContainer = document.getElementById('server-list');
+
+        async function initDashboard() {
+            try {
+                const res = await fetch('/api/servers');
+                const servers = await res.json();
+                
+                servers.forEach((server, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `btn ${index === 0 ? 'active' : ''}`;
+                    btn.innerText = server.name;
+                    btn.onclick = () => {
+                        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        frame.src = server.url;
+                        statusText.innerText = server.name;
+                    };
+                    listContainer.appendChild(btn);
+                });
+
+                // Load first server by default
+                if(servers.length > 0) {
+                    frame.src = servers[0].url;
+                    statusText.innerText = servers[0].name;
+                }
+            } catch (err) {
+                statusText.innerText = "Error loading systems backend.";
+                statusText.style.color = "#f85149";
+            }
+        }
+        initDashboard();
+    </script>
+</body>
+</html>
